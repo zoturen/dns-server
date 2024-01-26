@@ -33,14 +33,14 @@ public class DnsPacket
         {
             RecordType.A => IPAddress.Parse(recordSet.Records[0].Content).GetAddressBytes(),
             RecordType.NS => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            RecordType.CNAME => FormatDnsLabel(recordSet.Records[0].Content),
+            RecordType.CNAME => SerializeDnsLabel(recordSet.Records[0].Content),
             RecordType.SOA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
             RecordType.PTR => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
             RecordType.MX => ((Func<byte[]>)(() => {
                 var content = recordSet.Records[0].Content.Split(' ');
-                return FormatMxRecord(content[1], ushort.Parse(content[0]));
+                return SerializeMxRecord(content[1], ushort.Parse(content[0]));
             }))(),
-            RecordType.TXT => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.TXT => SerializeText(recordSet.Records[0].Content),
             RecordType.AAAA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
             RecordType.SRV => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
             RecordType.ANY => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
@@ -52,27 +52,33 @@ public class DnsPacket
         return this;
     }
     
-    public static byte[] FormatMxRecord(string name, ushort preference)
+    public static byte[] SerializeMxRecord(string name, ushort preference)
     {
-        var nameBytes = FormatDnsLabel(name);
+        var nameBytes = SerializeDnsLabel(name);
         var data = new byte[nameBytes.Length + sizeof(ushort)];
         BinaryPrimitives.WriteUInt16BigEndian(data.AsSpan(0), preference);
         nameBytes.CopyTo(data, sizeof(ushort));
         return data;
     }
     
-    public static byte[] FormatDnsLabel(string label)
+    public static byte[] SerializeDnsLabel(string label)
     {
         var parts = label.Split('.');
         var result = new List<byte>();
         foreach (var part in parts)
         {
-            var partBytes = Encoding.ASCII.GetBytes(part);
-            result.Add((byte)partBytes.Length);
-            result.AddRange(partBytes);
+            result.AddRange(SerializeText(part));
         }
         result.Add(0); // End of label
         return result.ToArray();
+    }
+    
+    public static byte[] SerializeText(string text)
+    {
+        var bytes = new byte[sizeof(byte) + text.Length];
+        bytes[0] = (byte)text.Length;
+        Encoding.ASCII.GetBytes(text).CopyTo(bytes, sizeof(byte));
+        return bytes;
     }
     
     public byte[] Serialize()

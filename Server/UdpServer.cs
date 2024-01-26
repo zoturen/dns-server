@@ -104,6 +104,20 @@ public class UdpServer : IDisposable
                             Content = "10 mail.test.com"
                         }
                     ]
+                },
+                new ()
+                {
+                    Name = "_acme-challange.test.com.",
+                    Type = RecordType.TXT,
+                    Class = RecordClass.IN,
+                    Ttl = 300,
+                    Records =
+                    [
+                        new Record
+                        {
+                            Content = "admklm23m243lkmfkmesf_234nfkjmawmkq323__adwk"
+                        }
+                    ]
                 }
             }
         });
