@@ -22,13 +22,46 @@ public class DnsPacket
 
     public DnsPacket CreateResponsePacket(DnsPacket dnsRequestPacket, RecordSet recordSet)
     {
-        var recordData = Encoding.ASCII.GetBytes(recordSet.Records[0].Content);
+        
         Header = dnsRequestPacket.Header;
         Header.Flags.IsResponse = true;
         Header.AnswerCount = 1; // TODO: Support multiple records
         Question = dnsRequestPacket.Question;
-        Answer = new DnsAnswer().Create(Question.OriginalName, recordSet.Type, recordSet.Class, recordSet.Ttl, recordSet.DataLength, IPAddress.Parse(recordSet.Records[0].Content).GetAddressBytes()); // Set the data length to 4
+        //byte[] recordData = [];
+       
+        
+        var recordData =  recordSet.Type switch
+        {
+            RecordType.A => IPAddress.Parse(recordSet.Records[0].Content).GetAddressBytes(),
+            RecordType.NS => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.CNAME => FormatDnsLabel(recordSet.Records[0].Content),
+            RecordType.SOA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.PTR => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.MX => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.TXT => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.AAAA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.SRV => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.ANY => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        Console.WriteLine($"RecordDataBytes: {BitConverter.ToString(recordData)}");
+
+        Answer = new DnsAnswer().Create(Question.OriginalName, recordSet.Type, recordSet.Class, recordSet.Ttl, (ushort)recordData.Length, recordData);
         return this;
+    }
+    
+    public static byte[] FormatDnsLabel(string label)
+    {
+        var parts = label.Split('.');
+        var result = new List<byte>();
+        foreach (var part in parts)
+        {
+            var partBytes = Encoding.ASCII.GetBytes(part);
+            result.Add((byte)partBytes.Length);
+            result.AddRange(partBytes);
+        }
+        result.Add(0); // End of label
+        return result.ToArray();
     }
     
     public byte[] Serialize()

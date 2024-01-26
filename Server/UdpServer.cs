@@ -15,21 +15,21 @@ public class Zone
 public enum RecordType
 {
     A = 0x0001,
-    NS = 2,
-    CNAME = 5,
-    SOA = 6,
-    PTR = 12,
-    MX = 15,
-    TXT = 16,
-    AAAA = 28,
-    SRV = 33,
-    ANY = 255
+    NS = 0x0002,
+    CNAME = 0x0005,
+    SOA = 0x0006,
+    PTR = 0x000c,
+    MX = 0x000f,
+    TXT = 0x0010,
+    AAAA = 0x001c,
+    SRV = 0x0021,
+    ANY = 0x00ff
 }
 
 public enum RecordClass
 {
-    IN = 1,
-    ANY = 255
+    IN = 0x0001,
+    ANY = 0x00ff
 }
 
 public class RecordSet
@@ -38,7 +38,7 @@ public class RecordSet
     public RecordType Type { get; set; }
     public RecordClass Class { get; set; }
     public uint Ttl { get; set; }
-    public ushort DataLength { get; set; }
+    public ushort DataLength  => (ushort) Records.Sum(x => x.Content.Length);
     public List<Record> Records { get; set; } = null!;
 }
 
@@ -69,12 +69,25 @@ public class UdpServer : IDisposable
                     Type = RecordType.A,
                     Class = RecordClass.IN,
                     Ttl = 300,
-                    DataLength = 4,
                     Records =
                     [
                         new Record
                         {
                             Content = "127.0.0.1"
+                        }
+                    ]
+                },
+                new ()
+                {
+                    Name = "www1.test.com.",
+                    Type = RecordType.CNAME,
+                    Class = RecordClass.IN,
+                    Ttl = 300,
+                    Records =
+                    [
+                        new Record
+                        {
+                            Content = "www.test.com"
                         }
                     ]
                 }
@@ -135,6 +148,8 @@ public class UdpServer : IDisposable
                         var dnsResponsePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, recordSet);
                         var dnsResponsePacketBytes = dnsResponsePacket.Serialize();
                         _udpListener.Send(dnsResponsePacketBytes, dnsResponsePacketBytes.Length, _endPoint);
+                        Console.WriteLine($"DnsRequestBytes: {BitConverter.ToString(data)}");
+                        Console.WriteLine($"DnsResponseBytes: {BitConverter.ToString(dnsResponsePacketBytes)}");
                     }
 
                 }
