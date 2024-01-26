@@ -90,6 +90,20 @@ public class UdpServer : IDisposable
                             Content = "www.test.com"
                         }
                     ]
+                },
+                new ()
+                {
+                    Name = "test.com.",
+                    Type = RecordType.MX,
+                    Class = RecordClass.IN,
+                    Ttl = 300,
+                    Records =
+                    [
+                        new Record
+                        {
+                            Content = "10 mail.test.com"
+                        }
+                    ]
                 }
             }
         });

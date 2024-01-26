@@ -27,7 +27,6 @@ public class DnsPacket
         Header.Flags.IsResponse = true;
         Header.AnswerCount = 1; // TODO: Support multiple records
         Question = dnsRequestPacket.Question;
-        //byte[] recordData = [];
        
         
         var recordData =  recordSet.Type switch
@@ -37,17 +36,29 @@ public class DnsPacket
             RecordType.CNAME => FormatDnsLabel(recordSet.Records[0].Content),
             RecordType.SOA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
             RecordType.PTR => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            RecordType.MX => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+            RecordType.MX => ((Func<byte[]>)(() => {
+                var content = recordSet.Records[0].Content.Split(' ');
+                return FormatMxRecord(content[1], ushort.Parse(content[0]));
+            }))(),
             RecordType.TXT => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
             RecordType.AAAA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
             RecordType.SRV => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
             RecordType.ANY => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            _ => throw new ArgumentOutOfRangeException()
+            _ => Array.Empty<byte>()
         };
         Console.WriteLine($"RecordDataBytes: {BitConverter.ToString(recordData)}");
 
         Answer = new DnsAnswer().Create(Question.OriginalName, recordSet.Type, recordSet.Class, recordSet.Ttl, (ushort)recordData.Length, recordData);
         return this;
+    }
+    
+    public static byte[] FormatMxRecord(string name, ushort preference)
+    {
+        var nameBytes = FormatDnsLabel(name);
+        var data = new byte[nameBytes.Length + sizeof(ushort)];
+        BinaryPrimitives.WriteUInt16BigEndian(data.AsSpan(0), preference);
+        nameBytes.CopyTo(data, sizeof(ushort));
+        return data;
     }
     
     public static byte[] FormatDnsLabel(string label)
