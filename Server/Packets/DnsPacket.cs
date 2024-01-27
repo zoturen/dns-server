@@ -8,7 +8,7 @@ public class DnsPacket
 {
     public DnsHeader Header { get; set; } = null!;
     public DnsQuestion Question { get; set; } = null!;
-    public DnsAnswer Answer { get; set; } = null!;
+    public List<DnsAnswer> Answers { get; set; } = null!;
     
     
     
@@ -20,35 +20,41 @@ public class DnsPacket
         return this;
     }
 
-    public DnsPacket CreateResponsePacket(DnsPacket dnsRequestPacket, RecordSet recordSet)
+    public DnsPacket CreateResponsePacket(DnsPacket dnsRequestPacket, List<RecordSet> recordSets)
     {
         
         Header = dnsRequestPacket.Header;
         Header.Flags.IsResponse = true;
-        Header.AnswerCount = 1; // TODO: Support multiple records
+        Header.AnswerCount = (ushort)recordSets.Count; 
         Question = dnsRequestPacket.Question;
        
-        
-        var recordData =  recordSet.Type switch
-        {
-            RecordType.A => IPAddress.Parse(recordSet.Records[0].Content).GetAddressBytes(),
-            RecordType.NS => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            RecordType.CNAME => SerializeDnsLabel(recordSet.Records[0].Content),
-            RecordType.SOA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            RecordType.PTR => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            RecordType.MX => ((Func<byte[]>)(() => {
-                var content = recordSet.Records[0].Content.Split(' ');
-                return SerializeMxRecord(content[1], ushort.Parse(content[0]));
-            }))(),
-            RecordType.TXT => SerializeText(recordSet.Records[0].Content),
-            RecordType.AAAA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            RecordType.SRV => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            RecordType.ANY => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
-            _ => Array.Empty<byte>()
-        };
-        Console.WriteLine($"RecordDataBytes: {BitConverter.ToString(recordData)}");
+        var answers = new List<DnsAnswer>();
 
-        Answer = new DnsAnswer().Create(Question.OriginalName, recordSet.Type, recordSet.Class, recordSet.Ttl, (ushort)recordData.Length, recordData);
+        foreach (var recordSet in recordSets)
+        {
+            var recordData =  recordSet.Type switch
+            {
+                RecordType.A => IPAddress.Parse(recordSet.Records[0].Content).GetAddressBytes(),
+                RecordType.NS => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+                RecordType.CNAME => SerializeDnsLabel(recordSet.Records[0].Content),
+                RecordType.SOA => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+                RecordType.PTR => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+                RecordType.MX => ((Func<byte[]>)(() => {
+                    var content = recordSet.Records[0].Content.Split(' ');
+                    return SerializeMxRecord(content[1], ushort.Parse(content[0]));
+                }))(),
+                RecordType.TXT => SerializeText(recordSet.Records[0].Content),
+                RecordType.AAAA => IPAddress.Parse(recordSet.Records[0].Content).GetAddressBytes(),
+                RecordType.SRV => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+                RecordType.ANY => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
+                _ => Array.Empty<byte>()
+            };
+            Console.WriteLine($"RecordDataBytes: {BitConverter.ToString(recordData)}");
+
+            var answer = new DnsAnswer().Create(Question.OriginalName, recordSet.Type, recordSet.Class, recordSet.Ttl, (ushort)recordData.Length, recordData);
+            answers.Add(answer);
+        }
+        Answers = answers;
         return this;
     }
     
@@ -87,8 +93,9 @@ public class DnsPacket
         var questionBytes = Question.SerializeQuestion();
         var namePosition = Array.IndexOf(questionBytes, Question.OriginalName[0]) + headerBytes.Length;
         var nameOffset = (ushort)namePosition;
-
-        var answerBytes = Answer.SerializeAnswer(nameOffset);
+        
+        var answerBytes = Answers.Select(x => x.SerializeAnswer(nameOffset)).SelectMany(x => x).ToArray();
+        
         var data = new byte[headerBytes.Length + questionBytes.Length + answerBytes.Length];
         headerBytes.CopyTo(data, 0);
         questionBytes.CopyTo(data, headerBytes.Length);

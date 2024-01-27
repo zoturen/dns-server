@@ -65,7 +65,7 @@ public class UdpServer : IDisposable
             {
                 new ()
                 {
-                    Name = "www.test.com.",
+                    Name = "test.com.",
                     Type = RecordType.A,
                     Class = RecordClass.IN,
                     Ttl = 300,
@@ -79,6 +79,20 @@ public class UdpServer : IDisposable
                 },
                 new ()
                 {
+                    Name = "test.com.",
+                    Type = RecordType.A,
+                    Class = RecordClass.IN,
+                    Ttl = 300,
+                    Records =
+                    [
+                        new Record
+                        {
+                            Content = "127.0.0.12"
+                        }
+                    ]
+                },
+                new ()
+                {
                     Name = "www1.test.com.",
                     Type = RecordType.CNAME,
                     Class = RecordClass.IN,
@@ -87,7 +101,7 @@ public class UdpServer : IDisposable
                     [
                         new Record
                         {
-                            Content = "www.test.com"
+                            Content = "test.com"
                         }
                     ]
                 },
@@ -116,6 +130,20 @@ public class UdpServer : IDisposable
                         new Record
                         {
                             Content = "admklm23m243lkmfkmesf_234nfkjmawmkq323__adwk"
+                        }
+                    ]
+                },
+                new ()
+                {
+                    Name = "test.com.",
+                    Type = RecordType.AAAA,
+                    Class = RecordClass.IN,
+                    Ttl = 300,
+                    Records =
+                    [
+                        new Record
+                        {
+                            Content = "db37:3d06:ceba:e990:13af:65c4:d1a9:456c"
                         }
                     ]
                 }
@@ -166,20 +194,22 @@ public class UdpServer : IDisposable
             {
                 var data = _udpListener.Receive(ref _endPoint);
                 var dnsRequestPacket = new DnsPacket().ParseRequestPacket(data);
+
+                Console.WriteLine($"DnsRequestId: {dnsRequestPacket.Header.Id}");
+                Console.WriteLine($"DnsRequestType: {dnsRequestPacket.Question.Type}");
                 
                 var zone = GetZoneFromFqn(dnsRequestPacket.Question.Name);
                 if (zone != null!)
                 {
-                    var recordSet = zone.RecordSets.FirstOrDefault(r => r.Name == dnsRequestPacket.Question.Name);
-                    if (recordSet != null)
-                    {
-                        var dnsResponsePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, recordSet);
-                        var dnsResponsePacketBytes = dnsResponsePacket.Serialize();
-                        _udpListener.Send(dnsResponsePacketBytes, dnsResponsePacketBytes.Length, _endPoint);
-                        Console.WriteLine($"DnsRequestBytes: {BitConverter.ToString(data)}");
-                        Console.WriteLine($"DnsResponseBytes: {BitConverter.ToString(dnsResponsePacketBytes)}");
-                    }
-
+                   
+                    var recordSets = zone.RecordSets.Where(r => r.Name == dnsRequestPacket.Question.Name && r.Type == (RecordType)dnsRequestPacket.Question.Type).ToList();
+                    var responsePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, recordSets);
+                    
+                    var dnsResponsePacketBytes = responsePacket.Serialize();
+                    _udpListener.Send(dnsResponsePacketBytes, dnsResponsePacketBytes.Length, _endPoint);
+                    Console.WriteLine($"DnsRequestBytes: {BitConverter.ToString(data)}");
+                    Console.WriteLine($"DnsResponseBytes: {BitConverter.ToString(dnsResponsePacketBytes)}");
+                    
                 }
                 
             }
