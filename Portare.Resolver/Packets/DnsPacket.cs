@@ -1,8 +1,9 @@
 using System.Buffers.Binary;
 using System.Net;
 using System.Text;
+using Portare.Core.Models;
 
-namespace Server.Packets;
+namespace Portare.Resolver.Packets;
 
 public class DnsPacket
 {
@@ -20,9 +21,8 @@ public class DnsPacket
         return this;
     }
 
-    public DnsPacket CreateResponsePacket(DnsPacket dnsRequestPacket, List<RecordSet> recordSets)
-    {
-        
+    public DnsPacket CreateResponsePacket(DnsPacket dnsRequestPacket, List<RecordSet> recordSets) // this might not be the best way to do this and it
+    {                                                                                             // and it might not need List<RecordSet> as a parameter just RecordSet
         Header = dnsRequestPacket.Header;
         Header.Flags.IsResponse = true;
         Header.AnswerCount = (ushort)recordSets.Count; 

@@ -1,0 +1,29 @@
+@API_ENDPOINT = https://localhost:7129
+
+###
+
+POST {{API_ENDPOINT}}/zones
+Content-Type: application/json
+
+{
+    "name": "example.com."
+}
+
+###
+
+POST {{API_ENDPOINT}}/zones/example.com./recordsets
+Content-Type: application/json
+
+{
+  "name": "example.com.",
+  "type": "MX",
+  "class": "IN",
+  "ttl": 300,
+  "records": [
+    {
+      "content": "10 mail.example.com."
+    }
+  ]
+}
+
+###

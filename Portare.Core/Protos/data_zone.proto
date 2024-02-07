@@ -1,0 +1,104 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "GrpcDataZone";
+
+service DataZone {
+  rpc InsertZone (InsertZoneRequest) returns (InsertZoneResponse);
+  rpc InsertRecordSet (InsertRecordSetRequest) returns (InsertRecordSetResponse);
+  rpc GetZoneByName (GetZoneByNameRequest) returns (GrpcZoneResponse);
+  rpc GetRecordSetByName (GetRecordSetByNameRequest) returns (GrpcRecordSetResponse);
+}
+
+message InsertZoneRequest {
+  string name = 1;
+}
+
+message InsertZoneResponse {
+  GrpcStatusResponse status = 1;
+  GrpcZone zone = 2;
+}
+
+message InsertRecordSetRequest {
+  string zoneName = 1;
+  string name = 2;
+  int32 recordType = 3;
+  int32 recordClass = 4;
+  uint32 ttl = 5;
+  repeated ContentRequest content = 6;
+}
+
+message ContentRequest {
+  string content = 1;
+  bool isDisabled = 2;
+}
+
+message InsertRecordSetResponse {
+  GrpcStatusResponse status = 1;
+  GrpcRecordSet recordSet = 2;
+}
+
+message InsertRecordRequest {
+  string recordSetId = 1;
+  string content = 2;
+}
+
+message InsertRecordResponse {
+  GrpcStatusResponse status = 1;
+  GrpcRecord record = 2;
+}
+
+message GetZoneByNameRequest {
+  string name = 1;
+}
+
+
+message GrpcZoneResponse {
+  GrpcStatusResponse status = 1;
+  GrpcZone zone = 2;
+}
+
+message GetRecordSetByNameRequest {
+  string recordSetName = 1;
+  uint32 recordType = 2;
+}
+
+message GrpcRecordSetResponse {
+  GrpcStatusResponse status = 1;
+  GrpcRecordSet recordSet = 2;
+}
+
+message GrpcZone {
+  string name = 1;
+  google.protobuf.Timestamp createdAt = 2;
+  google.protobuf.Timestamp updatedAt = 3;
+  repeated GrpcRecordSet recordSets = 4;
+}
+
+message GrpcRecordSet {
+  string id = 1;
+  string zoneName = 2;
+  string name = 3;
+  int32 recordType = 4;
+  int32 recordClass = 5;
+  uint32 ttl = 6;
+  repeated GrpcRecord content = 7;
+}
+
+message GrpcRecord {
+  string id = 1;
+  string recordSetId = 2;
+  string content = 3;
+  bool isDisabled = 4;
+}
+
+message GrpcStatusResponse {
+  string message = 1;
+  GrpcStatus status = 2;
+}
+
+enum GrpcStatus {
+  OK = 0;
+  ERROR = 1;
+}
+
