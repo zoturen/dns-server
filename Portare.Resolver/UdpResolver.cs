@@ -24,44 +24,7 @@ public class UdpResolver : IHostedService, IDisposable
     }
 
 
-    private async Task ResolveARecordAsync(DnsPacket dnsRequestPacket, IPEndPoint remoteEndPoint, byte[] data)
-    {
-        var name = dnsRequestPacket.Question.Name;
-        var recordSetResponse = await _dataZoneClient.GetRecordSetByNameAsync(new GetRecordSetByNameRequest
-        {
-            RecordSetName = name,
-            RecordType = (int) RecordType.A
-        });
-        
-        if (recordSetResponse.Status.Status != GrpcStatus.Ok)
-        {
-            // should serialize and send error response / refuse request? go check that up
-            return;
-        }
-
-        var recordSet = new RecordSet
-        {
-            Name = recordSetResponse.RecordSet.Name,
-            Type = (RecordType) recordSetResponse.RecordSet.RecordType,
-            Class = (RecordClass) recordSetResponse.RecordSet.RecordClass,
-            Ttl = recordSetResponse.RecordSet.Ttl,
-            Records = recordSetResponse.RecordSet.Content.Select(x =>
-            {
-                if (x.IsDisabled)
-                    return null!;
-                return new Record
-                {
-                    Content = x.Content,
-                };
-            }).ToList()
-        };
-
-        var responsePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, [recordSet]);
-        var dnsResponsePacketBytes = responsePacket.Serialize();
-        await _udpListener.SendAsync(dnsResponsePacketBytes, dnsResponsePacketBytes.Length, remoteEndPoint);
-        Console.WriteLine($"DnsRequestBytes: {BitConverter.ToString(data)}");
-        Console.WriteLine($"DnsResponseBytes: {BitConverter.ToString(dnsResponsePacketBytes)}");
-    }
+   
 
 
     public void Dispose()
@@ -88,16 +51,67 @@ public class UdpResolver : IHostedService, IDisposable
                 switch ((RecordType) dnsRequestPacket.Question.Type)
                 {
                     case RecordType.A:
-                        await ResolveARecordAsync(dnsRequestPacket, remoteEndPoint, data);
+                    case RecordType.AAAA:
+                    case RecordType.MX:
+                        await ResolveRecordAsync(dnsRequestPacket, remoteEndPoint, data);
                         break;
 
                     default:
+                        await ResolveNotImplementedAsync(dnsRequestPacket, remoteEndPoint, data);
                         break;
                 }
             }
         }, cancellationToken);
 
         return Task.CompletedTask;
+    }
+
+    private async Task ResolveNotImplementedAsync(DnsPacket dnsRequestPacket, IPEndPoint remoteEndPoint, byte[] data)
+    {
+        var notImplementedPacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, [], ResponseCode.NotImplemented);
+        var notImplementedPacketBytes = notImplementedPacket.Serialize();
+        await _udpListener.SendAsync(notImplementedPacketBytes, notImplementedPacketBytes.Length, remoteEndPoint);
+    }
+    
+    private async Task ResolveRecordAsync(DnsPacket dnsRequestPacket, IPEndPoint remoteEndPoint, byte[] data)
+    {
+        var name = dnsRequestPacket.Question.Name;
+        var recordSetResponse = await _dataZoneClient.GetRecordSetByNameAsync(new GetRecordSetByNameRequest
+        {
+            RecordSetName = name,
+            RecordType = dnsRequestPacket.Question.Type,
+        });
+        
+        if (recordSetResponse.Status.Status != GrpcStatus.Ok)
+        {
+            var noZonePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, [], ResponseCode.NotZone);
+            var noZonePacketBytes = noZonePacket.Serialize();
+            await _udpListener.SendAsync(noZonePacketBytes, noZonePacketBytes.Length, remoteEndPoint);
+            return;
+        }
+
+        var recordSet = new RecordSet
+        {
+            Name = recordSetResponse.RecordSet.Name,
+            Type = (RecordType) recordSetResponse.RecordSet.RecordType,
+            Class = (RecordClass) recordSetResponse.RecordSet.RecordClass,
+            Ttl = recordSetResponse.RecordSet.Ttl,
+            Records = recordSetResponse.RecordSet.Content.Select(x =>
+            {
+                if (x.IsDisabled)
+                    return null!;
+                return new Record
+                {
+                    Content = x.Content,
+                };
+            }).ToList()
+        };
+
+        var responsePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, [recordSet], ResponseCode.NoError);
+        var dnsResponsePacketBytes = responsePacket.Serialize();
+        await _udpListener.SendAsync(dnsResponsePacketBytes, dnsResponsePacketBytes.Length, remoteEndPoint);
+        Console.WriteLine($"DnsRequestBytes: {BitConverter.ToString(data)}");
+        Console.WriteLine($"DnsResponseBytes: {BitConverter.ToString(dnsResponsePacketBytes)}");
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

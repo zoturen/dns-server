@@ -21,10 +21,11 @@ public class DnsPacket
         return this;
     }
 
-    public DnsPacket CreateResponsePacket(DnsPacket dnsRequestPacket, List<RecordSet> recordSets) // this might not be the best way to do this and it
+    public DnsPacket CreateResponsePacket(DnsPacket dnsRequestPacket, List<RecordSet> recordSets, ResponseCode responseCode) // this might not be the best way to do this and it
     {                                                                                             // and it might not need List<RecordSet> as a parameter just RecordSet
         Header = dnsRequestPacket.Header;
         Header.Flags.IsResponse = true;
+        Header.Flags.ResponseCode = (byte)responseCode;
         Header.AnswerCount = (ushort)recordSets.Count; 
         Question = dnsRequestPacket.Question;
        
