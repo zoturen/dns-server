@@ -3,11 +3,16 @@
 
 ## Usage
 
-1. ` cd Server && dotnet run ` This starts the server and listens to Udp port 13000 and exposes a empty Web api for now.
-2. `nslookup -q=mx -port=13000 test.com localhost` Yeah we can reply with a MX record.
+1. `make prepare ` This restores the project and creates local dev certs.
+2. `make run_data` This starts the data layer server. The backend is Postgres.
+3. `make run_web` This starts the web server and exposes a very simple API.
+4. `make run_resolver` This starts the DNS resolver. It listens on port 13000 by default and only exposes a UDP port.
+5.  Add some data to the database. This is currently done by the web server.
+6. `nslookup -q=mx -port=13000 test.com localhost` This should return the MX record if the zone and record is in the database.
 
 
 ## Whats inside
 
-1. Not much.
-2. A, CNAME, MX. These are serializable from a object to an answer. 
+Nothing much as of yet.\
+I'm working on this as a side project when I got spare time from school.
+
