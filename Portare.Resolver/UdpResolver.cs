@@ -45,9 +45,6 @@ public class UdpResolver : IHostedService, IDisposable
                 var remoteEndPoint = udpReceiveResult.RemoteEndPoint;
                 var dnsRequestPacket = new DnsPacket().ParseRequestPacket(data);
 
-                Console.WriteLine($"DnsRequestId: {dnsRequestPacket.Header.Id}");
-                Console.WriteLine($"DnsRequestType: {dnsRequestPacket.Question.Type}");
-
                 switch ((RecordType) dnsRequestPacket.Question.Type)
                 {
                     case RecordType.A:
@@ -84,9 +81,8 @@ public class UdpResolver : IHostedService, IDisposable
         
         if (recordSetResponse.Status.Status != GrpcStatus.Ok)
         {
-            var noZonePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, [], ResponseCode.NotZone);
-            var noZonePacketBytes = noZonePacket.Serialize();
-            await _udpListener.SendAsync(noZonePacketBytes, noZonePacketBytes.Length, remoteEndPoint);
+            var noZonePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, [], ResponseCode.NotZone).Serialize();
+            await _udpListener.SendAsync(noZonePacket, noZonePacket.Length, remoteEndPoint);
             return;
         }
 
@@ -107,11 +103,8 @@ public class UdpResolver : IHostedService, IDisposable
             }).ToList()
         };
 
-        var responsePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, [recordSet], ResponseCode.NoError);
-        var dnsResponsePacketBytes = responsePacket.Serialize();
-        await _udpListener.SendAsync(dnsResponsePacketBytes, dnsResponsePacketBytes.Length, remoteEndPoint);
-        Console.WriteLine($"DnsRequestBytes: {BitConverter.ToString(data)}");
-        Console.WriteLine($"DnsResponseBytes: {BitConverter.ToString(dnsResponsePacketBytes)}");
+        var responsePacket = new DnsPacket().CreateResponsePacket(dnsRequestPacket, [recordSet], ResponseCode.NoError).Serialize();
+        await _udpListener.SendAsync(responsePacket, responsePacket.Length, remoteEndPoint);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

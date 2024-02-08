@@ -50,8 +50,6 @@ public class DnsPacket
                 RecordType.ANY => Encoding.ASCII.GetBytes(recordSet.Records[0].Content),
                 _ => Array.Empty<byte>()
             };
-            Console.WriteLine($"RecordDataBytes: {BitConverter.ToString(recordData)}");
-
             var answer = new DnsAnswer().Create(Question.OriginalName, recordSet.Type, recordSet.Class, recordSet.Ttl, (ushort)recordData.Length, recordData);
             answers.Add(answer);
         }
