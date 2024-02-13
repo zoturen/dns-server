@@ -12,13 +12,8 @@
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
-
     <ItemGroup>
-        <Protobuf Include="..\Portare.Core\Protos\data_zone.proto" Link="Protos\data_zone.proto" GrpcServices="Client" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Portare.Core\Portare.Core.csproj" />
+        <Protobuf Include="..\proto\data_zone.proto" Link="proto\data_zone.proto" GrpcServices="Client" />
     </ItemGroup>
 
 </Project>

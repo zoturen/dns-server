@@ -1,7 +1,6 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using GrpcDataZone;
-using Portare.Core.Models;
 using Portare.Data.Entities;
 using Portare.Data.Repositories;
 
@@ -98,8 +97,8 @@ public class DataZoneService(ZoneRepository zoneRepository, RecordSetRepository 
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
-            Type = (RecordType) request.RecordType,
-            Class = (RecordClass) request.RecordClass,
+            Type = request.RecordType,
+            Class =  request.RecordClass,
             Ttl = request.Ttl,
             ZoneName = request.ZoneName,
             CreatedAt = DateTime.UtcNow,
@@ -214,7 +213,7 @@ public class DataZoneService(ZoneRepository zoneRepository, RecordSetRepository 
         ServerCallContext context)
     {
         var recordSets = await recordSetRepository.GetAsync(x =>
-            x.Name == request.RecordSetName && x.Type == (RecordType) request.RecordType);
+            x.Name == request.RecordSetName && x.Type == request.RecordType);
         if (recordSets != null)
         {
             return new GrpcRecordSetResponse
@@ -229,8 +228,8 @@ public class DataZoneService(ZoneRepository zoneRepository, RecordSetRepository 
                     Id = recordSets.Id.ToString(),
                     ZoneName = recordSets.ZoneName,
                     Name = recordSets.Name,
-                    RecordType = (int) recordSets.Type,
-                    RecordClass = (int) recordSets.Class,
+                    RecordType =  (int)recordSets.Type,
+                    RecordClass = (int)recordSets.Class,
                     Ttl = recordSets.Ttl,
                     Content =
                     {
@@ -238,7 +237,8 @@ public class DataZoneService(ZoneRepository zoneRepository, RecordSetRepository 
                         {
                             Id = x.Id.ToString(),
                             RecordSetId = x.RecordSetId.ToString(),
-                            Content = x.Content
+                            Content = x.Content,
+                            IsDisabled = x.IsDisabled
                         })
                     }
                 }
@@ -250,7 +250,7 @@ public class DataZoneService(ZoneRepository zoneRepository, RecordSetRepository 
             Status = new GrpcStatusResponse
             {
                 Message = "Record set not found",
-                Status = GrpcStatus.Error
+                Status = GrpcStatus.NotFound
             },
             RecordSet = null
         };

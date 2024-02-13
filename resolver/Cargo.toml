@@ -1,0 +1,28 @@
+[package]
+name = "resolver"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "resolver"
+path = "src/main.rs"
+
+[dependencies]
+tonic = { version = "0.11.0", features = ["tls", "tls-roots"]}
+tonic-types = "0.11.0"
+prost = "0.12.3"
+prost-types = "0.12.3"
+prost-derive = "0.12.3"
+bytes = "1.5.0"
+tokio = { version = "1", features = ["full"] }
+
+
+[build-dependencies]
+tonic-build = "0.11.0"
+
+
+
+

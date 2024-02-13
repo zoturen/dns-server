@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Portare.Core.Models;
 
 namespace Portare.Web.Models;
 

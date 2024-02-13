@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Portare.Core.Models;
 
 namespace Portare.Data.Entities;
 
@@ -9,8 +8,8 @@ public class RecordSetEntity
     [Key]
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
-    public RecordType Type { get; set; }
-    public RecordClass Class { get; set; }
+    public int Type { get; set; }
+    public int Class { get; set; }
     public uint Ttl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

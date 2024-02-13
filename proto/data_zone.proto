@@ -2,6 +2,7 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 
 option csharp_namespace = "GrpcDataZone";
+package datazone;
 
 service DataZone {
   rpc InsertZone (InsertZoneRequest) returns (InsertZoneResponse);
@@ -60,7 +61,7 @@ message GrpcZoneResponse {
 
 message GetRecordSetByNameRequest {
   string recordSetName = 1;
-  uint32 recordType = 2;
+  int32 recordType = 2;
 }
 
 message GrpcRecordSetResponse {
@@ -100,5 +101,6 @@ message GrpcStatusResponse {
 enum GrpcStatus {
   OK = 0;
   ERROR = 1;
+  NOT_FOUND = 2;
 }
 

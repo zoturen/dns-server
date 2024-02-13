@@ -1,6 +1,5 @@
 
 using GrpcDataZone;
-using Portare.Core.Models;
 using Portare.Web.Models;
 
 namespace Portare.Web.Endpoints;

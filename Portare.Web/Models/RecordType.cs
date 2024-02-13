@@ -1,5 +1,5 @@
 
-namespace Portare.Core.Models;
+namespace Portare.Web.Models;
 
 public enum RecordType
 {

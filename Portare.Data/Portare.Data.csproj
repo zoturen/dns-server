@@ -18,12 +18,9 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Portare.Core\Portare.Core.csproj" />
-    </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="..\Portare.Core\Protos\data_zone.proto" Link="Protos\data_zone.proto" GrpcServices="Server" />
+        <Protobuf Include="..\proto\data_zone.proto" Link="proto\data_zone.proto" GrpcServices="Server" />
     </ItemGroup>
 
 </Project>
