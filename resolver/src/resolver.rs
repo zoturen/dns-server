@@ -96,8 +96,8 @@ impl Resolver {
         });
         
 
-        let mut client = DataZoneClient::connect("https://localhost:7049").await.map_err(|err| format!("Failed to connect to data zone: {}", err))?;
-        let grpc_response = match client.get_record_set_by_name(request).await {
+        
+        let grpc_response = match self.data_zone_client.get_record_set_by_name(request).await {
             Ok(response) => response,
             Err(status) => {
                 println!(" Error status received. Extracting error details...\n");
